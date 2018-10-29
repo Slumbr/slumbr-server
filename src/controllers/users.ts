@@ -20,8 +20,8 @@ export const getUser = async (ctx: BaseContext) => {
     ctx.status = 200;
     ctx.body = user;
   } else {
-    // return a BAD REQUEST status code and error message
-    ctx.status = 400;
+    // return a NOT FOUND status code and error message
+    ctx.status = 404;
     ctx.body = "The user you are trying to retrieve doesn't exist in the db";
   }
 };
