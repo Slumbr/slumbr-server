@@ -6,7 +6,9 @@ const config = {
   debugLogging: process.env.NODE_ENV == "development",
   dbsslconn: process.env.NODE_ENV != "development",
   sessionSecret: process.env.SESSION_SECRET,
-  saltRounds: 16
+  saltRounds: 16,
+  googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || ""
 };
 
 export { config };

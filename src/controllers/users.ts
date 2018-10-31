@@ -1,18 +1,15 @@
 import { BaseContext } from "koa";
-import { Repository, getManager } from "typeorm";
 import { User } from "../entity/user";
+import { getUserById } from "../repositories/user";
 
 // TODO just allow a user to fetch selfr only
 export const getUser = async (ctx: BaseContext) => {
-  // get a user repository to perform operations with user
-  const userRepository: Repository<User> = getManager().getRepository(User);
-
   const userId = (ctx as any).params.id || undefined;
 
   let user: User | undefined;
 
   if (userId) {
-    user = await userRepository.findOne(userId);
+    user = await getUserById(userId);
   }
 
   if (user) {

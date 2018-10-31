@@ -6,8 +6,6 @@ const parsedOptions = PostgressConnectionStringParser.parse(
   process.env.DATABASE_URL
 );
 
-console.log([parsedOptions, "parsedOptions"].pop(), parsedOptions);
-
 module.exports = {
   host: parsedOptions.host || undefined,
   port: parsedOptions.port || undefined,
