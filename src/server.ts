@@ -3,7 +3,7 @@ import * as bodyParser from "koa-bodyparser";
 import * as helmet from "koa-helmet";
 import * as cors from "@koa/cors";
 import * as winston from "winston";
-import { createConnection, ConnectionOptions } from "typeorm";
+import { ConnectionOptions, createConnection } from "typeorm";
 import "reflect-metadata";
 
 import { logger } from "./logging";
@@ -14,6 +14,8 @@ import * as session from "koa-session";
 import * as RedisStore from "koa-redis";
 
 import * as ormconfig from "../ormconfig";
+import * as koaStatic from "koa-static";
+import * as path from "path";
 
 // Get DB connection options from env variable
 const connectionOptions: ConnectionOptions = {
@@ -49,6 +51,8 @@ const runServer = async () => {
   require("./controllers/auth");
   app.use(passport.initialize());
   app.use(passport.session());
+
+  app.use(koaStatic(path.join(__dirname, "static")));
 
   app.use(router.routes()).use(router.allowedMethods());
 
