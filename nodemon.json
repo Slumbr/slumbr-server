@@ -1,6 +1,6 @@
 {
   "watch": ["src", "ormconfig.js"],
-  "ext": "ts",
+  "ext": "js,ts",
   "ignore": ["src/**/*.spec.ts"],
-  "exec": "ts-node ./src/server.ts"
+  "exec": "ts-node ./src/entry.ts"
 }

@@ -22,9 +22,8 @@ export const createDevice = async (ctx: Context) => {
   await codeManager.insert(code);
 
   ctx.body = {
-    deviceId: device.id,
-    deviceToken: token.id,
-    deviceRegisterCode: code.id
+    deviceToken: token.uuid,
+    deviceRegisterCode: code.uuid
   };
 };
 
@@ -34,7 +33,6 @@ interface LinkBody {
 
 export const linkDeviceToUser = async (ctx: Context): Promise<void> => {
   const user = getAuthenticatedUserOrThrow(ctx);
-
   const body: Partial<LinkBody> | null | undefined = ctx.request.body;
 
   const inputCode = body && body.deviceRegisterCode;
@@ -50,7 +48,7 @@ export const linkDeviceToUser = async (ctx: Context): Promise<void> => {
     .innerJoinAndSelect("deviceRegisterCode.deviceToken", "deviceToken")
     .innerJoinAndSelect("deviceToken.device", "device")
     .leftJoinAndSelect("device.user", "user")
-    .where({ id: Equal(inputCode) })
+    .where({ uuid: Equal(inputCode) })
     .getOne();
 
   if (!code) {

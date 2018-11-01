@@ -3,9 +3,14 @@ import { DeviceToken } from "./deviceToken";
 
 @Entity()
 export class DeviceRegisterCode {
-  @PrimaryGeneratedColumn("uuid")
-  id!: string;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-  @ManyToOne(_ => DeviceToken, deviceToken => deviceToken.deviceRegisterCodes)
+  @PrimaryGeneratedColumn("uuid")
+  uuid!: string;
+
+  @ManyToOne(_ => DeviceToken, deviceToken => deviceToken.deviceRegisterCodes, {
+    onDelete: "CASCADE"
+  })
   deviceToken!: DeviceToken;
 }

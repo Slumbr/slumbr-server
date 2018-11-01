@@ -1,14 +1,14 @@
 {
   "name": "slumbr-server",
   "version": "0.0.1",
-  "main": "src/server.ts",
+  "main": "src/app.ts",
   "author": "Robbie Coomber",
-  "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "ts-node src/server.ts",
-    "watch": "nodemon",
-    "typeorm": "ts-node node_modules/.bin/typeorm"
+    "start": "NODE_ENV=production ts-node src/entry.ts",
+    "watch": "NODE_ENV=development nodemon",
+    "typeorm": "ts-node node_modules/.bin/typeorm",
+    "test": "NODE_ENV=test jest --forceExit"
   },
   "dependencies": {
     "@koa/cors": "^2.2.2",
@@ -48,6 +48,13 @@
     "winston": "^3.1.0"
   },
   "devDependencies": {
-    "prettier": "^1.14.3"
+    "@types/chai": "^4.1.7",
+    "@types/chai-http": "^3.0.5",
+    "@types/jest": "^23.3.9",
+    "chai": "^4.2.0",
+    "chai-http": "^4.2.0",
+    "jest": "^23.6.0",
+    "prettier": "^1.14.3",
+    "ts-jest": "^23.10.4"
   }
 }

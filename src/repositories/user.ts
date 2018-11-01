@@ -1,5 +1,7 @@
 import { Equal, getManager } from "typeorm";
 import { User } from "../entity/user";
+import * as bcrypt from "bcrypt";
+import { config } from "../config";
 
 export const getUserById = async (id: number) => {
   const userRepository = getManager().getRepository(User);
@@ -20,7 +22,15 @@ export const insertUser = async (user: User) => {
   return await userRepository.insert(user);
 };
 
-export const getOrInsertUserByEmail = async (email: string) => {
+export const getOrInsertUserByEmail = async (
+  email: string,
+  passwordPlainText?: string
+) => {
+  let passwordHash: string | undefined = undefined;
+  if (passwordPlainText) {
+    passwordHash = await bcrypt.hash(passwordPlainText, config.saltRounds);
+  }
+
   const userRepository = getManager().getRepository(User);
   // Gotta love using an ORM....
   // This is heavily inspired by https://stackoverflow.com/questions/34708509/how-to-use-returning-with-on-conflict-in-postgresql/42217872#42217872
@@ -30,12 +40,12 @@ export const getOrInsertUserByEmail = async (email: string) => {
   // SELECT based on the input data, and UNION the INSERT and SELECT
   const queryResponse = await userRepository.query(
     `
-WITH input_rows(email) AS (
+WITH input_rows(email, password) AS (
    VALUES
-      ($1)
+      ($1, $2)
    )
 , ins AS (
-   INSERT INTO "user" (email) 
+   INSERT INTO "user" (email, password) 
    SELECT * FROM input_rows
    ON CONFLICT (email) DO NOTHING
    RETURNING *            
@@ -47,7 +57,7 @@ SELECT 's' AS source, u.*
 FROM input_rows
 JOIN "user" u USING (email);
 `,
-    [email]
+    [email, passwordHash || null]
   );
 
   const rawUser = queryResponse && queryResponse[0];
@@ -58,5 +68,5 @@ JOIN "user" u USING (email);
   const user = new User();
   user.id = rawUser.id;
   user.email = rawUser.email;
-  return user;
+  return { wasInserted: rawUser.source === "i", user };
 };

@@ -7,11 +7,7 @@ import { OAuth2Strategy as GoogleStrategy } from "passport-google-oauth";
 import { User } from "../entity/user";
 import { getManager } from "typeorm";
 import { config } from "../config";
-import {
-  getOrInsertUserByEmail,
-  getUserByEmail,
-  insertUser
-} from "../repositories/user";
+import { getOrInsertUserByEmail, getUserByEmail } from "../repositories/user";
 
 passport.serializeUser<User, number>((user, done) => {
   done(null, user.id);
@@ -62,7 +58,10 @@ passport.use(
       if (!primaryEmail) {
         return cb(Error("No primary email"), undefined);
       }
-      const user = await getOrInsertUserByEmail(primaryEmail.value);
+      const getOrInsertResult = await getOrInsertUserByEmail(
+        primaryEmail.value
+      );
+      const user = getOrInsertResult && getOrInsertResult.user;
       cb(null, user);
     }
   )
@@ -76,18 +75,18 @@ export const googleAuth = passport.authenticate("google", {
 });
 
 export const googleCallback = passport.authenticate("google", {
-  successRedirect: "/",
-  failureRedirect: "/login"
+  successRedirect: "/api/auth/status",
+  failureRedirect: "/api/auth/status"
 });
 
 export const doLogin = passport.authenticate("local", {
-  successRedirect: "/",
-  failureRedirect: "/login"
+  successRedirect: "/api/auth/status",
+  failureRedirect: "/api/auth/status"
 });
 
 export const doLogout = (ctx: Context) => {
   ctx.logOut();
-  ctx.redirect("/login");
+  ctx.redirect("/api/auth/status");
 };
 
 interface RegisterBody {
@@ -111,24 +110,26 @@ export const doRegister = async (ctx: Context, next: () => Promise<any>) => {
     return ctx.throw(400);
   }
 
-  const user = new User();
-  user.email = body.email;
+  let getOrInsertResponse;
   try {
-    await user.setPasswordHashFromPlainText(body.password);
-  } catch (error) {
-    return ctx.throw(400);
-  }
-
-  try {
-    await insertUser(user);
+    getOrInsertResponse = await getOrInsertUserByEmail(
+      body.email,
+      body.password
+    );
   } catch (error) {
     return ctx.throw(500, error);
+  }
+  if (!getOrInsertResponse || !getOrInsertResponse.wasInserted) {
+    return ctx.throw(409, "User with email already exists");
   }
 
   return passport.authenticate("local", async (_, user: User) => {
     if (user) {
       await ctx.login(user);
-      return ctx.redirect("/api/auth/status");
+      ctx.body = {
+        email: user.email
+      };
+      return;
     } else {
       return ctx.throw(500);
     }

@@ -4,10 +4,15 @@ import { Device } from "./device";
 
 @Entity()
 export class DeviceToken {
-  @PrimaryGeneratedColumn("uuid")
-  id!: string;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
-  @ManyToOne(_ => Device, device => device.deviceTokens)
+  @PrimaryGeneratedColumn("uuid")
+  uuid!: string;
+
+  @ManyToOne(_ => Device, device => device.deviceTokens, {
+    onDelete: "CASCADE"
+  })
   device!: Device;
 
   @OneToMany(
