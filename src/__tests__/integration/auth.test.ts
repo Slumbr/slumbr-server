@@ -1,4 +1,4 @@
-import { runSingletonServer, stopSingletonServer } from "../server";
+import { runSingletonServer, stopSingletonServer } from "../../server";
 
 import * as chai from "chai";
 // @ts-ignore
@@ -9,9 +9,9 @@ chai.use(chaiHttp);
 
 import { Server } from "http";
 import * as typeorm from "typeorm";
-import { config } from "../config";
+import { config } from "../../config";
 import { Connection, Equal } from "typeorm";
-import { User } from "../entity/user";
+import { User } from "../../entity/user";
 
 const email = "email@example.com";
 const password = "hunter2";
@@ -85,14 +85,15 @@ describe("auth", () => {
   });
 
   describe("POST /api/auth/login", () => {
-    beforeEach(async () => {
+    beforeAll(async () => {
       await deleteAllUsers();
+      await createTestUser();
     });
 
     it("should return 200 and set cookies if user is in database with right password", async () => {
       const res = await chai
         .request(server)
-        .post("/api/auth/register")
+        .post("/api/auth/login")
         .set("content-type", "application/x-www-form-urlencoded")
         .send({ email, password });
 
@@ -100,6 +101,25 @@ describe("auth", () => {
       res.type.should.equal("application/json");
       res.body.should.deep.equal({ email });
     });
-    // TODO test for user already exists
+
+    it("should return an error for invalid password", async () => {
+      const res = await chai
+        .request(server)
+        .post("/api/auth/login")
+        .set("content-type", "application/x-www-form-urlencoded")
+        .send({ email, password: "wrong password" });
+
+      res.status.should.equal(401);
+    });
+
+    it("should return an error when there is no user with that email", async () => {
+      const res = await chai
+        .request(server)
+        .post("/api/auth/login")
+        .set("content-type", "application/x-www-form-urlencoded")
+        .send({ email: "wrong.email@example.com", password });
+
+      res.status.should.equal(401);
+    });
   });
 });

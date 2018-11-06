@@ -1,7 +1,7 @@
 import { Context } from "koa";
 import { User } from "../entity/user";
 
-export const getAuthenticatedUserOrThrow = (ctx: Context) => {
+export const getAuthenticatedUserOrThrow = (ctx: Context): User => {
   if (!ctx.isAuthenticated()) {
     return ctx.throw(403);
   }

@@ -8,6 +8,7 @@ import { User } from "../entity/user";
 import { getManager } from "typeorm";
 import { config } from "../config";
 import { getOrInsertUserByEmail, getUserByEmail } from "../repositories/user";
+import { getAuthenticatedUserOrThrow } from "../utils/auth";
 
 passport.serializeUser<User, number>((user, done) => {
   done(null, user.id);
@@ -35,7 +36,8 @@ passport.use(
     try {
       const user = await getUserByEmail(email);
       if (!user) return done(null, false);
-      if (!user.comparePassword(password)) {
+      if (!(await user.comparePassword(password))) {
+        return done(null, false);
       }
       return done(null, user);
     } catch (error) {
@@ -79,10 +81,23 @@ export const googleCallback = passport.authenticate("google", {
   failureRedirect: "/api/auth/status"
 });
 
-export const doLogin = passport.authenticate("local", {
-  successRedirect: "/api/auth/status",
-  failureRedirect: "/api/auth/status"
-});
+export const doLogin = [
+  async (ctx: Context, next: () => Promise<void>) => {
+    try {
+      await next();
+    } catch (err) {
+      if (err.name === "AuthenticationError") {
+        return ctx.throw(401);
+      }
+    }
+    const user = getAuthenticatedUserOrThrow(ctx);
+    ctx.body = { email: user.email };
+    return;
+  },
+  passport.authenticate("local", {
+    failWithError: true
+  })
+];
 
 export const doLogout = (ctx: Context) => {
   ctx.logOut();
