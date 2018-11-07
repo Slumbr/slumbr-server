@@ -60,4 +60,6 @@ const createApp = async () => {
   return app;
 };
 
+// this is done here so that the app is a singleton, and consumers can use this
+// promise to wait for it to be ready
 export const appPromise = createApp();

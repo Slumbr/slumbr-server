@@ -1,4 +1,4 @@
-import { runSingletonServer, stopSingletonServer } from "../../server";
+import { stopSingletonServer } from "../../server";
 
 import * as chai from "chai";
 // @ts-ignore
@@ -7,20 +7,25 @@ import * as chaiHttp from "chai-http";
 chai.should();
 chai.use(chaiHttp);
 
-import { Server } from "http";
 import * as typeorm from "typeorm";
 import { config } from "../../config";
-import { Connection, Equal } from "typeorm";
-import { User } from "../../entity/user";
+import { Connection } from "typeorm";
+import {
+  getOrInsertUserByEmail,
+  getUserByEmail
+} from "../../repositories/user";
+import * as Koa from "koa";
+import { appPromise } from "../../app";
+import { getCookiesStringFromResponse } from "./helpers/cookies";
 
 const email = "email@example.com";
 const password = "hunter2";
 
 describe("auth", () => {
-  let server: Server;
+  let app: Koa;
   let connection: Connection;
   beforeAll(async () => {
-    server = await runSingletonServer();
+    app = await appPromise;
     connection = await typeorm.createConnection({
       ...config.ormConfig,
       name: "test"
@@ -32,16 +37,7 @@ describe("auth", () => {
   });
 
   const createTestUser = async () => {
-    const user = new User();
-    user.email = email;
-    await user.setPasswordHashFromPlainText(password);
-    await connection.getRepository(User).insert(user);
-  };
-
-  const getUserWithEmail = async () => {
-    return await connection
-      .getRepository(User)
-      .findOne({ email: Equal(email) });
+    await getOrInsertUserByEmail(email, password);
   };
 
   const deleteAllUsers = async () => {
@@ -55,7 +51,7 @@ describe("auth", () => {
 
     it("should add a user to the database and return 200", async () => {
       const res = await chai
-        .request(server)
+        .request(app.callback())
         .post("/api/auth/register")
         .set("content-type", "application/x-www-form-urlencoded")
         .send({ email, password });
@@ -64,7 +60,7 @@ describe("auth", () => {
       res.type.should.equal("application/json");
       res.body.should.deep.equal({ email });
 
-      const user = await getUserWithEmail();
+      const user = await getUserByEmail(email);
       expect(user).toBeTruthy();
       if (user) {
         const passwordMatches = await user.comparePassword(password);
@@ -75,7 +71,7 @@ describe("auth", () => {
       await createTestUser();
 
       const res = await chai
-        .request(server)
+        .request(app.callback())
         .post("/api/auth/register")
         .set("content-type", "application/x-www-form-urlencoded")
         .send({ email, password });
@@ -92,7 +88,7 @@ describe("auth", () => {
 
     it("should return 200 and set cookies if user is in database with right password", async () => {
       const res = await chai
-        .request(server)
+        .request(app.callback())
         .post("/api/auth/login")
         .set("content-type", "application/x-www-form-urlencoded")
         .send({ email, password });
@@ -104,7 +100,7 @@ describe("auth", () => {
 
     it("should return an error for invalid password", async () => {
       const res = await chai
-        .request(server)
+        .request(app.callback())
         .post("/api/auth/login")
         .set("content-type", "application/x-www-form-urlencoded")
         .send({ email, password: "wrong password" });
@@ -114,12 +110,58 @@ describe("auth", () => {
 
     it("should return an error when there is no user with that email", async () => {
       const res = await chai
-        .request(server)
+        .request(app.callback())
         .post("/api/auth/login")
         .set("content-type", "application/x-www-form-urlencoded")
         .send({ email: "wrong.email@example.com", password });
 
       res.status.should.equal(401);
+    });
+  });
+
+  describe("POST /api/auth/status", () => {
+    let loggedInAgent: ReturnType<typeof chai.request.agent>;
+
+    afterAll(async () => {
+      await stopSingletonServer();
+      await connection.close();
+      await loggedInAgent.close();
+    });
+    beforeAll(async () => {
+      await deleteAllUsers();
+      await createTestUser();
+      loggedInAgent = chai.request.agent(app.callback());
+    });
+
+    it("should return false when not logged in", async () => {
+      const res = await chai
+        .request(app.callback())
+        .get("/api/auth/status")
+        .set("content-type", "application/x-www-form-urlencoded")
+        .send({});
+
+      res.status.should.equal(200);
+      res.type.should.equal("application/json");
+      res.body.should.deep.equal({ authenticated: false });
+    });
+
+    it.only("should return true when logged in", async () => {
+      const loginRes = await loggedInAgent
+        .post("/api/auth/login")
+        .set("content-type", "application/x-www-form-urlencoded")
+        .send({ email, password });
+
+      loginRes.status.should.equal(200);
+
+      const statusRes = await loggedInAgent
+        .get("/api/auth/status")
+        .set("cookie", getCookiesStringFromResponse(loginRes))
+        .set("content-type", "application/x-www-form-urlencoded")
+        .send({});
+
+      statusRes.status.should.equal(200);
+      statusRes.type.should.equal("application/json");
+      statusRes.body.should.deep.equal({ authenticated: true });
     });
   });
 });
