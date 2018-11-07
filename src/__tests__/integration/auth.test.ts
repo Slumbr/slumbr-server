@@ -16,7 +16,7 @@ import {
 } from "../../repositories/user";
 import * as Koa from "koa";
 import { appPromise } from "../../app";
-import { getCookiesStringFromResponse } from "./helpers/cookies";
+import { getCookiesStringFromResponse } from "../helpers/cookies";
 
 const email = "email@example.com";
 const password = "hunter2";
