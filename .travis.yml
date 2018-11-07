@@ -1,2 +1,10 @@
 language: node_js
 cache: yarn
+services:
+- postgresql
+- redis-server
+
+before_script:
+- psql -c 'CREATE USER slumbr WITH PASSWORD "slumbr";' -U postgres
+- psql -c "CREATE DATABASE slumbr WITH OWNER 'slumbr';" -U postgres
+- psql -c 'CREATE EXTENSION "uuid-ossp";' -U postgres -d slumbr
