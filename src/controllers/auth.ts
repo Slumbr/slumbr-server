@@ -63,7 +63,7 @@ passport.use(
       const getOrInsertResult = await getOrInsertUserByEmail(
         primaryEmail.value
       );
-      const user = getOrInsertResult && getOrInsertResult.user;
+      const user = getOrInsertResult && getOrInsertResult.value;
       cb(null, user);
     }
   )

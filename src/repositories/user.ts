@@ -2,6 +2,7 @@ import { Equal, getManager } from "typeorm";
 import { User } from "../entity/user";
 import * as bcrypt from "bcrypt";
 import { config } from "../config";
+import * as createHttpError from "http-errors";
 
 export const getUserById = async (id: number) => {
   const userRepository = getManager().getRepository(User);
@@ -22,10 +23,15 @@ export const insertUser = async (user: User) => {
   return await userRepository.insert(user);
 };
 
+interface GetOrInsertResult<T> {
+  wasInserted: boolean;
+  value: T;
+}
+
 export const getOrInsertUserByEmail = async (
   email: string,
   passwordPlainText?: string
-) => {
+): Promise<GetOrInsertResult<User>> => {
   let passwordHash: string | undefined = undefined;
   if (passwordPlainText) {
     passwordHash = await bcrypt.hash(passwordPlainText, config.saltRounds);
@@ -62,11 +68,14 @@ JOIN "user" u USING (email);
 
   const rawUser = queryResponse && queryResponse[0];
   if (!rawUser) {
-    return null;
+    throw createHttpError(
+      500,
+      "No user in response from get or insert from db"
+    );
   }
 
   const user = new User();
   user.id = rawUser.id;
   user.email = rawUser.email;
-  return { wasInserted: rawUser.source === "i", user };
+  return { wasInserted: rawUser.source === "i", value: user };
 };
