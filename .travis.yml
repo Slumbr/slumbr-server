@@ -3,10 +3,29 @@ cache: yarn
 services:
 - postgresql
 - redis-server
+
+sudo: true
+
 addons:
-  postgresql: "10.5"
+  postgresql: "10"
+  apt:
+    packages:
+    - postgresql-10
+    - postgresql-client-10
+
+env:
+  global:
+    # for some reason postgres 10 operates on a different port on travis
+    - PGPORT=5433
+
 node_js:
   - "8.12.0"
 
 before_script:
-- bash scripts/create_test_db.sh
+  # for some reason the postgres 10 conf file isn't set up correctly, so copy the 9.6 one and restart
+  - sudo cp /etc/postgresql/9.6/main/pg_hba.conf /etc/postgresql/10/main/pg_hba.conf
+  - sudo -u postgres /usr/lib/postgresql/10/bin/pg_ctl reload -D /var/lib/postgresql/10/main
+
+  # set up the test database
+  - bash scripts/create_test_db.sh
+  - yarn syncTestDb
