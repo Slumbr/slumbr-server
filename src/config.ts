@@ -1,14 +1,9 @@
 import * as path from "path";
 import { PostgresConnectionOptions } from "typeorm/driver/postgres/PostgresConnectionOptions";
-import * as PostgressConnectionStringParser from "pg-connection-string";
 
 const dotEnvFile = process.env.NODE_ENV === "test" ? ".env.test" : ".env";
 const dotEnvPath = path.join(__dirname, "..", dotEnvFile);
 require("dotenv").config({ path: dotEnvPath });
-
-const parsedOptions = PostgressConnectionStringParser.parse(
-  process.env.DATABASE_URL || ""
-);
 
 export const config = {
   port: Number(process.env.PORT || 3000),
@@ -19,11 +14,11 @@ export const config = {
   googleClientId: process.env.GOOGLE_CLIENT_ID || "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
   ormConfig: {
-    host: parsedOptions.host || undefined,
-    port: parsedOptions.port || undefined,
-    username: parsedOptions.user || undefined,
-    password: parsedOptions.password || undefined,
-    database: parsedOptions.database || undefined,
+    host: process.env.PGHOST,
+    port: process.env.PGPORT,
+    username: process.env.PGUSER,
+    password: process.env.PGPASSWORD,
+    database: process.env.PGDATABASE,
     type: "postgres",
     synchronize: process.env.NODE_ENV !== "production",
     logging: false,

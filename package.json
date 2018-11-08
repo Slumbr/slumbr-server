@@ -8,7 +8,8 @@
     "start": "NODE_ENV=production ts-node src/entry.ts",
     "watch": "NODE_ENV=development nodemon",
     "typeorm": "ts-node node_modules/.bin/typeorm",
-    "test": "NODE_ENV=test jest --forceExit"
+    "test": "NODE_ENV=test jest --forceExit",
+    "syncTestDb": "NODE_ENV=test yarn typeorm schema:sync"
   },
   "dependencies": {
     "@koa/cors": "^2.2.2",

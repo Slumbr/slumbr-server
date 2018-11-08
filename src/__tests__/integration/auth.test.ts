@@ -41,7 +41,7 @@ describe("auth", () => {
   };
 
   const deleteAllUsers = async () => {
-    await connection.createQueryRunner().query(`DELETE FROM "user"`);
+    await connection.createQueryRunner().query(`DELETE FROM "user" CASCADE`);
   };
 
   describe("POST /api/auth/register", () => {

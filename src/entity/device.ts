@@ -10,6 +10,9 @@ export class Device {
   @OneToMany(_ => DeviceToken, deviceToken => deviceToken.device)
   deviceTokens!: DeviceToken[];
 
-  @ManyToOne(_ => User, user => user.devices, { nullable: true })
+  @ManyToOne(_ => User, user => user.devices, {
+    nullable: true,
+    onDelete: "SET NULL"
+  })
   user?: User;
 }
