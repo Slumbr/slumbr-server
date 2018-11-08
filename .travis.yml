@@ -3,7 +3,8 @@ cache: yarn
 services:
 - postgresql
 - redis-server
-
+addons:
+  postgresql: "10.5"
 node_js:
   - "8.12.0"
 
